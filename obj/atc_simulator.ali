@@ -1,0 +1,148 @@
+V "GNAT Lib v15"
+M P W=b
+A -gnatA
+A -mtune=generic
+A -march=x86-64
+P ZX
+
+RN
+RV NO_DELAY
+RV NO_DIRECT_BOOLEAN_OPERATORS
+RV NO_FIXED_POINT
+RV NO_FLOATING_POINT
+RV NO_IO
+RV NO_RELATIVE_DELAY
+RV NO_DYNAMIC_SIZED_OBJECTS
+RV NO_IMPLEMENTATION_PRAGMAS
+
+U atc_simulator%b	atc_simulator.adb	a7428091 NE OO SU
+W ada%s			ada.ads			ada.ali
+Z ada.calendar.delays%s	a-caldel.adb		a-caldel.ali
+W ada.float_text_io%s	a-flteio.ads		a-flteio.ali
+W ada.integer_text_io%s	a-inteio.ads		a-inteio.ali
+W ada.numerics%s	a-numeri.ads		a-numeri.ali
+W ada.numerics.elementary_functions%s  a-nuelfu.ads  a-nuelfu.ali
+Z ada.strings.text_buffers%s  a-sttebu.adb	a-sttebu.ali
+W ada.text_io%s		a-textio.adb		a-textio.ali
+Z system.concat_2%s	s-conca2.adb		s-conca2.ali
+Z system.concat_3%s	s-conca3.adb		s-conca3.ali
+Z system.concat_4%s	s-conca4.adb		s-conca4.ali
+Z system.concat_5%s	s-conca5.adb		s-conca5.ali
+Z system.img_int%s	s-imgint.ads		s-imgint.ali
+
+D ada.ads		20250425081800 76789da1 ada%s
+D a-calend.ads		20250425081800 bf7f3cc9 ada.calendar%s
+D a-caldel.ads		20250425081800 9f20b83d ada.calendar.delays%s
+D a-except.ads		20250425081800 e7970cd9 ada.exceptions%s
+D a-flteio.ads		20250425081800 e18a47a0 ada.float_text_io%s
+D a-inteio.ads		20250425081800 f64b89a4 ada.integer_text_io%s
+D a-ioexce.ads		20250425081800 40018c65 ada.io_exceptions%s
+D a-numeri.ads		20250425081800 84bea7a3 ada.numerics%s
+D a-nuelfu.ads		20250425081800 03e83d1c ada.numerics.elementary_functions%s
+D a-ngelfu.ads		20250425081800 324808ac ada.numerics.generic_elementary_functions%s
+D a-stream.ads		20250425081800 17477cbd ada.streams%s
+D a-string.ads		20250425081800 90ac6797 ada.strings%s
+D a-sttebu.ads		20250425081800 f1ad67a2 ada.strings.text_buffers%s
+D a-stuten.ads		20250425081800 c6ced0ae ada.strings.utf_encoding%s
+D a-tags.ads		20250425081800 fbca0ad5 ada.tags%s
+D a-textio.ads		20250425081800 34ef47de ada.text_io%s
+D a-tiflio.ads		20250425081800 48a0360d ada.text_io.float_io%s
+D a-tiinio.ads		20250425081800 76699c8f ada.text_io.integer_io%s
+D a-unccon.ads		20250425081800 0e9b276f ada.unchecked_conversion%s
+D atc_simulator.adb	20250625013930 87843457 atc_simulator%b
+D interfac.ads		20250425081800 9111f9c1 interfaces%s
+D i-cstrea.ads		20250425081800 ffd01b9d interfaces.c_streams%s
+D system.ads		20250425081800 a869df9e system%s
+D s-conca2.ads		20250425081800 b5fb73f7 system.concat_2%s
+D s-conca3.ads		20250425081800 8a7a19a2 system.concat_3%s
+D s-conca4.ads		20250425081800 33f85f3e system.concat_4%s
+D s-conca5.ads		20250425081800 4099d1db system.concat_5%s
+D s-crtl.ads		20250425081800 beb39b9e system.crtl%s
+D s-exctab.ads		20250425081800 91bef6ef system.exception_table%s
+D s-ficobl.ads		20250425081800 dc5161d4 system.file_control_block%s
+D s-imagei.ads		20250425081800 5e131ce0 system.image_i%s
+D s-imgint.ads		20250425081800 67e4edfb system.img_int%s
+D s-parame.ads		20250425081800 3597fc11 system.parameters%s
+D s-putima.ads		20250425081800 17291fe4 system.put_images%s
+D s-secsta.ads		20250425081800 578279f5 system.secondary_stack%s
+D s-soflin.ads		20250425081800 5d88fdea system.soft_links%s
+D s-stache.ads		20250425081800 0b81c1fe system.stack_checking%s
+D s-stalib.ads		20250425081800 1c9580f6 system.standard_library%s
+D s-stoele.ads		20250425081800 ccded4e8 system.storage_elements%s
+D s-traent.ads		20250425081800 c81cbf8c system.traceback_entries%s
+D s-unstyp.ads		20250425081800 fa2a7f59 system.unsigned_types%s
+D s-valspe.ads		20250425081800 f810d31c system.val_spec%s
+D s-vaispe.ads		20250425081800 8280550e system.value_i_spec%s
+D s-vauspe.ads		20250425081800 89269ba5 system.value_u_spec%s
+D s-vs_int.ads		20250425081800 06b6b724 system.vs_int%s
+D s-vs_uns.ads		20250425081800 e7f47a27 system.vs_uns%s
+D s-wchcon.ads		20250425081800 d9032363 system.wch_con%s
+G a e
+G c Z b b [atc_simulator standard 15 11 none]
+X 1 ada.ads
+18K9*Ada 22e8 20|9r6 9r31 10r6 10r31 11r6 11r31 12r6 12r45
+X 5 a-flteio.ads
+20K13*Float_Text_IO[17|46] 20|10w10 10r35
+X 6 a-inteio.ads
+18K13*Integer_Text_IO[18|46] 20|11w10 11r35
+X 8 a-numeri.ads
+20K13*Numerics 36e17 20|12r10 12r49
+X 9 a-nuelfu.ads
+18K22*Elementary_Functions[10|39] 20|12w19 12r58
+X 10 a-ngelfu.ads
+53V13*Sqrt{float} 20|57s14[9|18]
+100V13*Sin{float} 20|91s57[9|18]
+112V13*Cos{float} 20|90s57[9|18]
+X 16 a-textio.ads
+58K13*Text_IO 785e16 20|9w10 9r35
+89I12*Field{integer}
+284U14*New_Line 20|76s7
+515U14*Put 20|70s7 71s52 72s52 73s7 73s36 74s7 74s67 75s7
+565U14*Put_Line 20|80s4 82s7 100s16 102s16 111s4
+X 17 a-tiflio.ads
+88U14*Put 20|71s7[5|20] 72s7[5|20] 74s20[5|20] 75s20[5|20]
+90i7 Fore{16|89I12} 20|71r20[5|20] 72r20[5|20] 74r35[5|20] 75r33[5|20]
+91i7 Aft{16|89I12} 20|71r31[5|20] 72r31[5|20] 74r46[5|20] 75r44[5|20]
+92i7 Exp{16|89I12} 20|71r41[5|20] 72r41[5|20] 74r56[5|20] 75r54[5|20]
+X 18 a-tiinio.ads
+85U14*Put 20|73s20[6|18]
+X 20 atc_simulator.adb
+15U11*ATC_Simulator 15b11 112l5 112t18
+17i4 Num_Aircraft{integer} 23r35
+18i4 Steps{integer} 81r21
+19f4 Min_Sep_NM{float} 63r41
+20i4 Min_Sep_Ft{integer} 64r44
+23I9 Aircraft_ID<short_short_integer> 36r34 85r16 97r16 98r19
+24R9 Position 27e14 31r19 53r31
+25f7 X{float} 54r24 54r31 71r17 90m27 90r46
+25f10 Y{float} 55r24 55r31 72r17 91m27 91r46
+26i7 Alt{integer} 64r24 64r37 73r30
+29R9 Aircraft 34e14 36r50 61r39 68r33
+30a7 Call_Sign{string} 70r13 100r53 101r45 102r53 103r55
+31r7 Pos{24R9} 63r26 63r34 64r20 64r33 71r13 72r13 73r26 90m23 90r42 91m23
+. 91r42
+32f7 Heading{float} 74r26 88r59
+33f7 Speed{float} 75r26 87r48
+36A9 Aircraft_Array(29R9)<23I9> 39r13
+39a4 Planes{36A9} 87r38 88r49 90m13 90r32 91m13 91r32 93r25 99r48 99r59 100r43
+. 101r35 102r43 103r45
+46V13 Deg_To_Rad{float} 46b13 46>24 50l8 50t18 88s38
+46f24 D{float} 49r14
+47f7 Pi{float} 49r18
+53V13 Distance{float} 53b13 53>22 53>26 58l8 58t16 63s14
+53r22 P1{24R9} 54r21 55r21
+53r26 P2{24R9} 54r28 55r28
+54f7 DX{float} 57r19 57r22
+55f7 DY{float} 57r27 57r30
+61V13 Predict_Conflict{boolean} 61b13 61>30 61>34 65l8 65t24 99s31
+61r30 A1{29R9} 63r23 64r17
+61r34 A2{29R9} 63r31 64r30
+68U14 Print_Aircraft 68b14 68>29 77l8 77t22 93s10
+68r29 A{29R9} 70r11 71r11 72r11 73r24 74r24 75r24
+81i8 Step{integer} 82r49
+85i11 I{23I9} 87r45 88r56 90r20 90r39 91r20 91r39 93r32
+87f13 Dist{float} 90r50 91r50
+88f13 Rad{float} 90r61 91r61
+97i11 I{23I9} 99r16 99r55 100r50 102r50
+98i14 J{23I9} 99r20 99r66 101r42 103r52
+

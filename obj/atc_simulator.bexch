@@ -1,0 +1,19 @@
+[GENERATED OBJECT FILE]
+b__atc_simulator.o
+[PROJECT FILES]
+C:\GNATStudio\projectFolder\ATCSimulator\atc_simulator.gpr
+20250625013528 ba923cf1a40f01c0d0a6219419e699a2
+[BOUND OBJECT FILES]
+C:\GNATStudio\projectFolder\ATCSimulator\obj\atc_simulator.o
+[GENERATED SOURCE FILES]
+b__atc_simulator.ads
+b__atc_simulator.adb
+b__atc_simulator.ali
+[RESULTING OPTIONS]
+-LC:\GNATStudio\projectFolder\ATCSimulator\obj\
+-LC:\GNATStudio\projectFolder\ATCSimulator\obj\
+-LC:/users/tisha/appdata/local/alire/cache/toolchains/gnat_native_15.1.2_85aa1632/lib/gcc/x86_64-w64-mingw32/15.1.0/adalib/
+-static
+C:/users/tisha/appdata/local/alire/cache/toolchains/gnat_native_15.1.2_85aa1632/lib/gcc/x86_64-w64-mingw32/15.1.0/adalib/libgnat.a
+-lm
+-Wl,--stack=0x2000000
