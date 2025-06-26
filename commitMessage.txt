@@ -1,0 +1,11 @@
+feat: Add comprehensive aircraft state management with ICAO safety standards; Used Ada's safety-critical features
+
+- Implement strong typing with aviation-specific constraints
+- Add aircraft categories, flight phases, and transponder codes  
+- Integrate ICAO separation standards including RVSM and wake turbulence
+- Added exception handling for aviation safety
+- Enhance radar display with ATC formatting
+- Implement realistic aircraft movement with vertical rates
+- Used Ada's custom exceptions for aviation-specific errors
+- Used Ada's constrained subtypes preventing invalid states
+

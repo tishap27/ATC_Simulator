@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<Locations >
+  <Project >
+    <file_marker column=" 1" line=" 1" >
+      <vfs_project />
+      <vfs_file>C:\GNATStudio\projectFolder\ATCSimulator\src\atc_simulator.adb</vfs_file>
+    </file_marker>
+    <file_marker column=" 33" line=" 54" >
+      <vfs_project>C:\GNATStudio\projectFolder\ATCSimulator\atc_simulator.gpr</vfs_project>
+      <vfs_file>C:\GNATStudio\projectFolder\ATCSimulator\src\atc_simulator.adb</vfs_file>
+    </file_marker>
+    <file_marker column=" 14" line=" 57" >
+      <vfs_project>C:\GNATStudio\projectFolder\ATCSimulator\atc_simulator.gpr</vfs_project>
+      <vfs_file>C:\GNATStudio\projectFolder\ATCSimulator\src\atc_simulator.adb</vfs_file>
+    </file_marker>
+    <file_marker column=" 1" line=" 13" >
+      <vfs_project>C:\GNATStudio\projectFolder\ATCSimulator\atc_simulator.gpr</vfs_project>
+      <vfs_file>C:\GNATStudio\projectFolder\ATCSimulator\src\atc_simulator.adb</vfs_file>
+    </file_marker>
+    <file_marker column=" 14" line=" 57" >
+      <vfs_project>C:\GNATStudio\projectFolder\ATCSimulator\atc_simulator.gpr</vfs_project>
+      <vfs_file>C:\GNATStudio\projectFolder\ATCSimulator\src\atc_simulator.adb</vfs_file>
+    </file_marker>
+    <file_marker current="true" column=" 57" line=" 90" >
+      <vfs_project>C:\GNATStudio\projectFolder\ATCSimulator\atc_simulator.gpr</vfs_project>
+      <vfs_file>C:\GNATStudio\projectFolder\ATCSimulator\src\atc_simulator.adb</vfs_file>
+    </file_marker>
+  </Project>
+</Locations>
