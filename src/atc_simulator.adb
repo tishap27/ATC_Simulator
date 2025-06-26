@@ -39,7 +39,8 @@ procedure ATC_Simulator is
    subtype Speed_Knots is Float range 0.0 .. 1000.0 ;
    subtype Coordinate_NM is Float range -1000.0 .. 1000.0;
    subtype Call_Sign_Type is String(1..8);
-
+   subtype Wind_Speed_Kt is Float range 0.0 .. 200.0 ;
+   subtype Wind_Direction_Deg is Float range 0.0 .. 359.9 ;
 
    --Flight Levels and categories  enumeration type , a user-defined type
    type Flight_Level is (VFR , IFR_LOW , IFR_HIGH , RVSM);
@@ -68,6 +69,10 @@ procedure ATC_Simulator is
    -- Simulation parameters
    Num_Aircraft : constant Integer := 3;
    Steps        : constant Integer := 10;
+
+   --Wind Constants
+   Wind_Speed : Wind_Speed_Kt := 30.0;
+   Wind_Direction : Wind_Direction_Deg := 135.0;
 
    --Separation standards (ICAO)
    Min_Sep_NM     : constant Float := 5.0;    -- Min horizontal separation (nm)
@@ -235,10 +240,16 @@ procedure ATC_Simulator is
       Distance_NM : Float := A.Speed * Delta_Time_Min / 60.0;
       Heading_Rad : Float := Deg_To_Rad(A.Heading);
       Altitude_Change : Integer := Integer(Float(A.Vertical_Rate) * Delta_Time_Min);
+
+      --Wind Calculation
+      Wind_Rad : constant Float := Deg_To_Rad(Wind_Direction);
+      Wind_X : constant Float := Wind_Speed * Cos(Wind_Rad) * Delta_Time_Min / 60.0 ;
+      Wind_Y : constant Float := Wind_Speed * Sin(Wind_Rad) * Delta_Time_Min / 60.0 ;
+
    begin
       -- Update horizontal position
-      A.Pos.X := A.Pos.X + Distance_NM * Cos(Heading_Rad);
-      A.Pos.Y := A.Pos.Y + Distance_NM * Sin(Heading_Rad);
+      A.Pos.X := A.Pos.X + Distance_NM * Cos(Heading_Rad) + Wind_X;
+      A.Pos.Y := A.Pos.Y + Distance_NM * Sin(Heading_Rad) + Wind_Y;
 
       -- Update altitude
       A.Pos.Alt := A.Pos.Alt + Altitude_Change;
@@ -260,6 +271,13 @@ begin
 
    for Step in 1 .. Steps loop
       Put_Line("===RADAR SWEEP " & Integer'Image(Step) & "===");
+      Put("Weather: Wind ");
+      Put(Wind_Speed, Fore => 3, Aft => 0, Exp => 0);
+      Put(" kt from ");
+      Put(Wind_Direction , Fore => 3, Aft => 0, Exp => 0);
+      Put(" deg");
+      New_Line;
+
       Put_Line("--- Time Step " & Duration'Image(Duration(Step)) & " minutes");
 
       begin
