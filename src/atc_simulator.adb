@@ -4,7 +4,8 @@
 --  Author: Tisha Patel
 --  Date: June 2025
 --  Description: Main simulation procedure for ATC radar system.
---        Added: Advanced ATC radar system with comprehensive state management.
+--               Advanced ATC radar system with comprehensive state management.
+--
 --  Tracks 3 aircrafts over 10 minutes
 --  Monitors aircraft positions, speeds, altitudes, and flight phases while enforcing
 --  ICAO separation standards and wake turbulence rules for aviation safety.
@@ -15,7 +16,9 @@
 --  > Wake turbulence category management (Heavy/Medium/Light aircraft)
 --  > Flight phase monitoring (Taxi/Takeoff/Climb/Cruise/Descent/Approach/Landing)
 --  > Conflict detection and advisory generation
---  > Comprehensive aircraft state validation
+--  > Displays ETA (estimated time of arrival) to next waypoint
+--  > Lists all waypoints and highlights current progress for each aircraft
+--  > Logs speed and altitude changes at each waypoint
 --
 --  Aircraft Simulated:
 --  > AAL123: Heavy aircraft cruising at FL300, heading East
@@ -168,6 +171,37 @@ procedure ATC_Simulator is
       return Heading_Result;
    end Heading_To_Waypoint;
 
+   --ETA to next waypoint
+   function ETA_To_Waypoint(A : Aircraft_State) return Float is
+      Current_WP : Waypoint := A.Route(A.Current_WayPoint);
+      Dist : Float := Distance(A.Pos , Current_WP.Pos);
+   begin
+      if A.Speed > 1.0 then
+         return Dist/ A.Speed * 60.0 ;
+      else
+         return 0.0 ;
+      end if;
+   end ETA_To_Waypoint;
+
+   --Display All waypoints
+   procedure Display_FlightPlan_Progress(A : Aircraft_State) is
+   begin
+      Put("Route: ");
+      for I in 1 .. 5 loop
+         if I = A.Current_Waypoint then
+            Put("[");
+            Put(A.Route(I).Name);
+            Put("]");
+         else
+            Put(A.Route(I).Name);
+         end if;
+         if I < 5 then
+            Put(" -> ");
+         end if;
+      end loop;
+      New_Line;
+   end Display_FlightPlan_Progress;
+
    -- Update aircraft flight Plan according to Waypoint
    procedure Update_FlightPlan(A: in out Aircraft_State) is
       Current_WP : Waypoint := A.Route(A.Current_WayPoint);
@@ -196,13 +230,23 @@ procedure ATC_Simulator is
       --Update heading towards current waypoint
       A.Heading := Heading_To_Waypoint(A.Pos , Current_WP.Pos);
 
-       -- Apply speed restrictions
+       -- Apply speed restrictions and log changes
       if Current_WP.Speed_Restriction > 0.0 then
+         if abs A.Speed -Current_WP.Speed_Restriction > 1.0 then
+            Put_Line("  " & A.Call_Sign & " SPEED CHANGE: Now " &
+            Float'Image(Current_WP.Speed_Restriction) & " kt at " & Current_WP.Name);
+      end if;
          A.Speed := Current_WP.Speed_Restriction;
       end if;
 
        -- Calculate vertical rate for altitude restrictions
       if Current_WP.Altitude_Restriction /= A.Pos.Alt then
+
+         if abs A.Pos.Alt - Current_WP.Altitude_Restriction > 50 then
+            Put_Line("  " & A.Call_Sign & " ALTITUDE CHANGE: Now climbing/descending to " &
+            Integer'Image(Current_WP.Altitude_Restriction) & " ft at " & Current_WP.Name);
+         end if;
+
          if Current_WP.Altitude_Restriction > A.Pos.Alt then
             A.Vertical_Rate := 1000;  -- Climb at 1000 fpm
          else
@@ -310,6 +354,17 @@ procedure ATC_Simulator is
          Put("V/S:"); Put(A.Vertical_Rate, Width => 5); Put("fpm ");
       end if;
 
+      if A.Following_Plan then
+         Put(" " & A.Route(A.Current_WayPoint).Name & " " );
+         declare
+            ETA : Float := ETA_To_Waypoint(A);
+         begin
+            Put("ETA to WP: ");
+            Put(Eta, Fore => 3, Aft => 1, Exp => 0);
+            Put(" min ");
+         end;
+      end if;
+
       New_Line;
    end Display_Aircraft_state;
 
@@ -391,7 +446,8 @@ begin
 
       for I in Aircraft_ID loop
          Update_Aircraft_Position(Planes(I) , 1.0) ;     -- At 1 min intervals
-         Display_Aircraft_state(Planes(I));
+            Display_Aircraft_state(Planes(I));
+            Display_FlightPlan_Progress(Planes(I));
       end loop;
          Put_Line (" ");
 
