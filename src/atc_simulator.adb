@@ -53,6 +53,16 @@ procedure ATC_Simulator is
       Alt : Altitude_Ft;     -- Altitude in feet
    end record;
 
+   --Flight Plan System added Waypoints
+   type Waypoint is record
+      Name: String (1 .. 5);
+      Pos : Position;
+      Speed_Restriction : Speed_Knots;
+      Altitude_Restriction : Altitude_Ft;
+   end record;
+
+   type Flight_Plan is array  (1 .. 5) of Waypoint;
+
    --Aircraft state  with comprehensive tracking
    type  Aircraft_State is record
       Call_Sign : Call_Sign_Type;
@@ -64,6 +74,11 @@ procedure ATC_Simulator is
       Last_Contact: Time;
       Squawk    : String(1..4);
       Vertical_Rate : Integer range -6000 .. 6000;   -- ft/min
+
+      --FlightPlan components
+      Route : Flight_Plan ;
+      Current_WayPoint : Integer range 1 .. 5 ;
+      Following_Plan : Boolean ;
    end record;
 
    -- Simulation parameters
@@ -89,12 +104,35 @@ procedure ATC_Simulator is
    Altitude_Violation_Error : exception;
    Speed_Violation_Error : exception;
 
+   -- Predefined FlightPlans
+   EAST1_Route : constant Flight_Plan := (
+      ("CYYZ ", (0.0, 0.0, 30000), 450.0, 30000),     -- Toronto Pearson
+      ("YCFIX", (25.0, 5.0, 30000), 450.0, 30000),    -- fix
+      ("YULFX", (50.0, 10.0, 30000), 450.0, 30000),   -- fix near Montreal
+      ("CYUL ", (75.0, 15.0, 30000), 450.0, 30000),   -- Montreal Trudeau
+      ("CYOW ", (100.0, 20.0, 30000), 250.0, 30000)   -- Ottawa
+                                         );
+    WEST2_Route : constant Flight_Plan := (
+      ("CYVR ", (10.0, 5.0, 31000), 430.0, 31000),    -- Vancouver
+      ("YVRFX", (0.0, 0.0, 28000), 430.0, 28000),     -- fix
+      ("YYC01", (-15.0, -5.0, 26000), 430.0, 26000),  -- fix near Calgary
+      ("CYYC ", (-30.0, -10.0, 26000), 430.0, 26000), -- Calgary
+      ("CYEG ", (-45.0, -15.0, 26000), 250.0, 26000)  -- Edmonton
+   );
+
+   SOUTH3_Route : constant Flight_Plan := (
+      ("CYOW ", (20.0, -10.0, 30000), 400.0, 30000),  -- Ottawa
+      ("YOWFX", (22.0, -25.0, 35000), 400.0, 35000),  -- fix
+      ("YYZFX", (24.0, -40.0, 40000), 400.0, 40000),  -- fix near Toronto
+      ("CYYZ ", (26.0, -55.0, 42000), 400.0, 42000),  -- Toronto Pearson
+      ("CYTZ ", (28.0, -70.0, 42000), 250.0, 42000)   -- Toronto Billy Bishop
+   );
 
    -- Initial aircraft states
    Planes : Aircraft_Array := (
-      ("AAL123  ", (0.0, 0.0, 30000), 90.0, 450.0     , HEAVY  , CRUISE  , Clock,  "1234" , 0 ),
-      ("UAL456  ", (10.0, 5.0, 31000), 270.0, 430.0   , MEDIUM , DESCENT , Clock,  "4321" , -500),
-      ("DAL789  ", (20.0, -10.0, 30000), 180.0, 400.0 , HEAVY  , CLIMB   , Clock,  "3456" , 1200)
+      ("AAL123  ", (0.0, 0.0, 30000), 90.0, 450.0     , HEAVY  , CRUISE  , Clock,  "1234" , 0 , EAST1_ROUTE ,1 , True ),
+      ("UAL456  ", (10.0, 5.0, 31000), 270.0, 430.0   , MEDIUM , DESCENT , Clock,  "4321" , -500 , WEST2_ROUTE , 1 , True ),
+      ("DAL789  ", (20.0, -10.0, 30000), 180.0, 400.0 , HEAVY  , CLIMB   , Clock,  "3456" , 1200 , SOUTH3_ROUTE , 1 , True)
    );
 
    -- Convert degrees to radians
@@ -111,6 +149,70 @@ procedure ATC_Simulator is
    begin
       return Sqrt(DX*DX + DY*DY);
    end Distance;
+
+   -- Calculate Heading to Waypoint
+   function Heading_To_Waypoint(From_Pos  , To_Pos : Position ) return Heading_Deg is
+      DX : Float := To_Pos.X - From_Pos.X ;
+      DY : Float := To_Pos.Y - From_Pos.Y ;
+      Heading_Rad : Float := Arctan(DY , DX);
+      Heading_Result : Float := (Heading_Rad * 180.0 ) / 3.1415;
+
+   begin
+      -- Normalize between 0 to 359.9
+      while Heading_Result < 0.0 loop
+         Heading_Result := Heading_Result + 360.0;
+      end loop;
+      while Heading_Result >= 360.0 loop
+         Heading_Result := Heading_Result - 360.0;
+      end loop;
+      return Heading_Result;
+   end Heading_To_Waypoint;
+
+   -- Update aircraft flight Plan according to Waypoint
+   procedure Update_FlightPlan(A: in out Aircraft_State) is
+      Current_WP : Waypoint := A.Route(A.Current_WayPoint);
+      Distance_To_WP : Float := Distance(A.Pos , Current_WP.Pos);
+   begin
+      if not A.Following_Plan then
+         return;
+      end if;
+
+      --check if reached current waypoint within 2nm
+      if Distance_To_WP < 2.0 then
+         Put_Line(" " & A.Call_Sign & " reached waypoint " & Current_WP.Name);
+
+         --Move to next waypoint if possible
+         if A.Current_WayPoint < 5 then
+            A.Current_Waypoint := A.Current_Waypoint + 1;
+            Current_WP := A.Route(A.Current_Waypoint);
+            Put_Line("  " & A.Call_Sign & " proceeding to " & Current_WP.Name);
+         else
+            A.Following_Plan := False;
+            Put_Line("  " & A.Call_Sign & " completed flight plan");
+            return;
+         end if;
+      end if;
+
+      --Update heading towards current waypoint
+      A.Heading := Heading_To_Waypoint(A.Pos , Current_WP.Pos);
+
+       -- Apply speed restrictions
+      if Current_WP.Speed_Restriction > 0.0 then
+         A.Speed := Current_WP.Speed_Restriction;
+      end if;
+
+       -- Calculate vertical rate for altitude restrictions
+      if Current_WP.Altitude_Restriction /= A.Pos.Alt then
+         if Current_WP.Altitude_Restriction > A.Pos.Alt then
+            A.Vertical_Rate := 1000;  -- Climb at 1000 fpm
+         else
+            A.Vertical_Rate := -1000; -- Descend at 1000 fpm
+         end if;
+      else
+         A.Vertical_Rate := 0;
+      end if;
+   end Update_FlightPlan;
+
 
    --calculate required separation
    function Required_Separation(Cat1 , Cat2 : Aircraft_Category) return Float is
@@ -247,6 +349,9 @@ procedure ATC_Simulator is
       Wind_Y : constant Float := Wind_Speed * Sin(Wind_Rad) * Delta_Time_Min / 60.0 ;
 
    begin
+      --Update FlightPlan
+      Update_FlightPlan(A);
+
       -- Update horizontal position
       A.Pos.X := A.Pos.X + Distance_NM * Cos(Heading_Rad) + Wind_X;
       A.Pos.Y := A.Pos.Y + Distance_NM * Sin(Heading_Rad) + Wind_Y;
@@ -267,6 +372,7 @@ begin
    Put_Line("Monitoring " & Integer'Image(Num_Aircraft) & " Aircrafts-");
    Put_Line("-ICAO separation standards enforced");
    Put_Line("-Wake turbulence categories active");
+   Put_Line("-Flight plan navigation enabled");
    Put_Line("");
 
    for Step in 1 .. Steps loop
