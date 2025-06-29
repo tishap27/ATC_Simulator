@@ -1,8 +1,22 @@
-feat: Add flight plan system with waypoint navigation. Aircraft now follows realistic flight paths instead of straight-line movement.2
+feat: Add visual radar display with real-time aircraft tracking
+Visual Radar Screen Implementation
 
-- Implement Waypoint and FlightPlan types for realistic routing
-- Add waypoint navigation logic with automatic heading calculation  
-- Create predefined routes: EAST1 (YYZ-YOW), WEST2 (YVR-YEG), SOUTH3 (YOW-YTZ)
-- Integrate speed/altitude restrictions per waypoint
-- Updated aircraft display to show current waypoint target
+Implemented 80x30 character ASCII radar screen with proper coordinate system
+Added world-to-screen coordinate conversion (NM to character grid positioning)
+Real-time display updates every radar sweep with aircraft position tracking
+Scale: 2 nautical miles per character for realistic distance representation
+
+
+Directional Indicators:
+
+> = Flying East (heading 315°-44°)
+v = Flying South (heading 45°-134°)
+< = Flying West (heading 135°-224°)
+^ = Flying North (heading 225°-314°)
+
+Range Ring System:
+
+Inner ring (.) = 10 nautical miles from radar center
+Outer ring (.) = 20 nautical miles from radar center
+Center point (*) = Radar control tower location(Center)
 

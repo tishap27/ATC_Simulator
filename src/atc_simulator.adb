@@ -36,6 +36,12 @@ with Ada.Calendar;        use Ada.Calendar;
 
 procedure ATC_Simulator is
 
+   --Display contents for radar screen
+   RADAR_WIDTH  : constant Integer := 80;
+   RADAR_HEIGHT : constant Integer := 30;
+   RADAR_FACTOR : constant Float := 2.0;  -- NM per character
+
+
    --Aviation Specific types with safety
    subtype Altitude_Ft is Integer range 0 .. 60_000 ;
    subtype Heading_Deg is Float range 0.0 .. 359.9;
@@ -102,7 +108,16 @@ procedure ATC_Simulator is
    type Aircraft_ID is range 1 .. Num_Aircraft;
    type Aircraft_Array is array (Aircraft_ID) of Aircraft_State;
 
-   --Custom Exceptions for aviation safety
+   -- Radar display types
+   type Radar_Cell is record
+      Aircraft_Present : Boolean := False ;
+      Aircraft_Symbol : String (1 ..2) ;
+      Aircraft_ID : Integer := 0 ;
+   end record;
+
+   type Radar_Display is array (1 .. RADAR_HEIGHT , 1.. RADAR_WIDTH) of Radar_Cell ;
+
+   --Specific Exceptions for aviation safety
    Aircraft_Conflict_Error : exception;
    Altitude_Violation_Error : exception;
    Speed_Violation_Error : exception;
@@ -137,6 +152,119 @@ procedure ATC_Simulator is
       ("UAL456  ", (10.0, 5.0, 31000), 270.0, 430.0   , MEDIUM , DESCENT , Clock,  "4321" , -500 , WEST2_ROUTE , 1 , True ),
       ("DAL789  ", (20.0, -10.0, 30000), 180.0, 400.0 , HEAVY  , CLIMB   , Clock,  "3456" , 1200 , SOUTH3_ROUTE , 1 , True)
    );
+
+   --Clear Screen procedure
+   procedure Clear_Screen is
+   begin
+      Put(ASCII.ESC & "[2J"  & ASCII.ESC & "[H");  -- ESC [2J: Clears the screen.ESC [H: Moves the cursor to the top-left.
+   end Clear_Screen;
+
+   --Converting World coordinates to radar screen
+   procedure World_To_Screen(X , Y :Float; Screen_X , Screen_Y : out Integer ; valid : out Boolean ) is
+   begin
+      Screen_X := Integer((X / RADAR_FACTOR) + Float(RADAR_WIDTH/2)) ;
+      Screen_Y := Integer((-Y /RADAR_FACTOR) + Float(RADAR_HEIGHT/2));
+
+      valid := Screen_X >= 1 and Screen_X <= RADAR_WIDTH and
+        Screen_Y >= 1 and Screen_Y <= RADAR_HEIGHT;
+   end World_To_Screen;
+
+   --Get Aircraft symbol based on category and heading
+   function Get_Aircraft_Symbol(A: Aircraft_State) return String is
+   begin
+      case A.Category is
+         when HEAVY =>
+            if A.Heading >= 315.0 or A.Heading < 45.0 then return "H>";     -- East
+            elsif A.Heading >= 45.0 and A.Heading < 135.0 then return "Hv";  --South
+            elsif A.Heading >= 135.0 and A.Heading < 225.0 then return "H<";  -- West
+            else return "H^";  -- oNrth
+            end if;
+        when MEDIUM =>
+            if A.Heading >= 315.0 or A.Heading < 45.0 then return "M>";
+            elsif A.Heading >= 45.0 and A.Heading < 135.0 then return "Mv";
+            elsif A.Heading >= 135.0 and A.Heading < 225.0 then return "M<";
+            else return "M^";
+            end if;
+        when LIGHT =>
+            if A.Heading >= 315.0 or A.Heading < 45.0 then return "L>";
+            elsif A.Heading >= 45.0 and A.Heading < 135.0 then return "Lv";
+            elsif A.Heading >= 135.0 and A.Heading < 225.0 then return "L<";
+            else return "L^";
+            end if;
+        when others =>
+            if A.Heading >= 315.0 or A.Heading < 45.0 then return "O>";
+            elsif A.Heading >= 45.0 and A.Heading < 135.0 then return "Ov";
+            elsif A.Heading >= 135.0 and A.Heading < 225.0 then return "O<";
+            else return "O^";
+            end if;
+      end case;
+   end Get_Aircraft_Symbol;
+
+   --Intialize Radar Display
+   procedure Intialize_Radar(Display: out Radar_Display) is
+   begin
+      for Row in 1 .. RADAR_HEIGHT loop
+         for Col in 1 .. RADAR_WIDTH loop
+            Display(Row , Col) := (False , "  " , 0 );
+         end loop;
+      end loop;
+   end Intialize_Radar;
+
+   --Update radar display with aircraft positions
+   procedure Update_Radar_Display (Display : out Radar_Display) is
+      Screen_X , Screen_Y : Integer ;
+      valid : Boolean ;
+   begin
+      Intialize_Radar(Display);
+
+      for I in Aircraft_ID loop
+         World_To_Screen(Planes(I).Pos.X, Planes(I).Pos.Y, Screen_X, Screen_Y, Valid);
+
+         if Valid then
+            Display(Screen_Y, Screen_X) := (
+               Aircraft_Present => True,
+               Aircraft_Symbol => Get_Aircraft_Symbol(Planes(I)),
+               Aircraft_ID => Integer(I)
+            );
+         end if;
+      end loop;
+   end Update_Radar_Display;
+
+   --Display Radar screen
+procedure Display_Radar_Screen(Display : Radar_Display) is
+begin
+   -- Top border with range rings
+   Put_Line("+" & (1..RADAR_WIDTH => '-') & "+");
+
+   for Row in 1..RADAR_HEIGHT loop
+      Put("|");
+      for Col in 1..RADAR_WIDTH loop
+         -- Draw range rings at center
+         if Row = RADAR_HEIGHT/2 and Col = RADAR_WIDTH/2 then
+            Put("*");  -- Center point
+         elsif (Row = RADAR_HEIGHT/2 and (Col = RADAR_WIDTH/2 + 10 or Col = RADAR_WIDTH/2 - 10)) or
+               (Col = RADAR_WIDTH/2 and (Row = RADAR_HEIGHT/2 + 5 or Row = RADAR_HEIGHT/2 - 5)) then
+            if not Display(Row, Col).Aircraft_Present then
+               Put(".");  -- Range ring markers  - 10nm ring  , 20nm ring (±1nm tolerance)
+            else
+               Put(Display(Row, Col).Aircraft_Symbol);
+            end if;
+         elsif Display(Row, Col).Aircraft_Present then
+            Put(Display(Row, Col).Aircraft_Symbol);
+         else
+            Put(" ");
+         end if;
+      end loop;
+      Put("|");
+      New_Line;
+   end loop;
+
+   -- Bottom border
+   Put_Line("+" & (1..RADAR_WIDTH => '-') & "+");
+   Put_Line("Scale: Each char = " & Float'Image(RADAR_FACTOR) & " NM  *=Center  .=Range Rings");
+end Display_Radar_Screen;
+
+
 
    -- Convert degrees to radians
    function Deg_To_Rad(D : Float) return Float is
@@ -392,6 +520,8 @@ procedure ATC_Simulator is
       Put_Line("");
    end Issue_Advisory;
 
+
+
    --update aircraft position with realistic movement
     procedure Update_Aircraft_Position(A : in out Aircraft_State; Delta_Time_Min : Float) is
       Distance_NM : Float := A.Speed * Delta_Time_Min / 60.0;
@@ -421,16 +551,21 @@ procedure ATC_Simulator is
          Put_Line("ERROR updating " & A.Call_Sign & ": " & Exception_Message(E));
    end Update_Aircraft_Position;
 
-
+ --Main simulation variable
+   Display : Radar_Display ;
 begin
    Put_Line("=== ATC Radar Simulator ===");
    Put_Line("Monitoring " & Integer'Image(Num_Aircraft) & " Aircrafts-");
    Put_Line("-ICAO separation standards enforced");
    Put_Line("-Wake turbulence categories active");
    Put_Line("-Flight plan navigation enabled");
+   Put_Line("-Visual radar display active");
    Put_Line("");
 
    for Step in 1 .. Steps loop
+
+      Clear_Screen;
+
       Put_Line("===RADAR SWEEP " & Integer'Image(Step) & "===");
       Put("Weather: Wind ");
       Put(Wind_Speed, Fore => 3, Aft => 0, Exp => 0);
@@ -450,6 +585,9 @@ begin
             Display_FlightPlan_Progress(Planes(I));
       end loop;
          Put_Line (" ");
+
+         Update_Radar_Display(Display);
+         Display_Radar_Screen(Display);
 
          -- Better Conflict detection
          declare
@@ -477,7 +615,7 @@ begin
 
       Put_Line("---");
 
-      delay 1.0; -- Simulate real-time update
+      delay 3.0; -- Simulate real-time update
    end loop;
    Put_Line("=== Simulation Complete ===");
 end ATC_Simulator;
