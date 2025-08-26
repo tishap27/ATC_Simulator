@@ -564,7 +564,7 @@ begin
 
    for Step in 1 .. Steps loop
 
-      Clear_Screen;
+      --Clear_Screen;
 
       Put_Line("===RADAR SWEEP " & Integer'Image(Step) & "===");
       Put("Weather: Wind ");

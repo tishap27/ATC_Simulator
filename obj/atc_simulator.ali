@@ -26,7 +26,7 @@ RV NO_IMPLEMENTATION_PRAGMAS
 RV NO_IMPLICIT_LOOPS
 RV NO_OBSOLESCENT_FEATURES
 
-U atc_simulator%b	atc_simulator.adb	6eb16273 NE OO SU
+U atc_simulator%b	atc_simulator.adb	e47755f6 NE OO SU
 W ada%s			ada.ads			ada.ali
 W ada.calendar%s	a-calend.adb		a-calend.ali
 Z ada.calendar.delays%s	a-caldel.adb		a-caldel.ali
@@ -74,7 +74,7 @@ D a-textio.ads		20250425081800 34ef47de ada.text_io%s
 D a-tiflio.ads		20250425081800 48a0360d ada.text_io.float_io%s
 D a-tiinio.ads		20250425081800 76699c8f ada.text_io.integer_io%s
 D a-unccon.ads		20250425081800 0e9b276f ada.unchecked_conversion%s
-D atc_simulator.adb	20250629194530 169fe6a5 atc_simulator%b
+D atc_simulator.adb	20250826001542 9c59d120 atc_simulator%b
 D interfac.ads		20250425081800 9111f9c1 interfaces%s
 D i-c.ads		20250425081800 e94c966a interfaces.c%s
 D i-cstrea.ads		20250425081800 ffd01b9d interfaces.c_streams%s
@@ -256,7 +256,7 @@ X 23 atc_simulator.adb
 141a4 SOUTH3_Route{73A9} 153r100
 150a4 Planes{109A9} 221r26 221r43 226r55 583m35 583r35 584r36 585r41 599r54
 . 599r66 600r37 600r49
-157U14 Clear_Screen 157b14 160l8 160t20 567s7
+157U14 Clear_Screen 157b14 160l8 160t20
 163U14 World_To_Screen 163b14 163>30 163>34 163<44 163<55 163<80 170l8 170t23
 . 221s10
 163f30 X{float} 165r28
