@@ -142,7 +142,7 @@ function Deg_To_Rad(D : Float) return Float;
    function Required_Separation(Cat1, Cat2 : Aircraft_Category) return Float;
    type Future_Conflict_Array is array (1 .. 10) of Future_Conflict;
    subtype Conflict_Count is Integer range 0 .. 10;
-
+procedure Update_Aircraft_Position(A : in out Aircraft_State; Delta_Time_Min : Float);
 
 
 
@@ -189,30 +189,32 @@ function Deg_To_Rad(D : Float) return Float;
 procedure Predict_Simple_Trajectory(
    A : Aircraft_State;
    Trajectory : out Aircraft_Trajectory) is
-begin
-   for Step in Prediction_Horizon loop
-      declare
-         Minutes_Ahead : Time_Minutes := Time_Minutes(Step);
-         Time_Delta : Float := Float(Minutes_Ahead);
-         Distance_NM : Float := A.Speed * Time_Delta / 60.0;
-         Heading_Rad : Float := Deg_To_Rad(A.Heading);
 
-         -- Simple position prediction (reuse your existing wind logic)
-         Wind_Rad : Float := Deg_To_Rad(Wind_Direction);
-         Wind_X : Float := Wind_Speed * Cos(Wind_Rad) * Time_Delta / 60.0;
-         Wind_Y : Float := Wind_Speed * Sin(Wind_Rad) * Time_Delta / 60.0;
+       Sim_Aircraft : Aircraft_State := A;  -- Copy for simulation
 
-         New_X : Float := A.Pos.X + Distance_NM * Cos(Heading_Rad) + Wind_X;
-         New_Y : Float := A.Pos.Y + Distance_NM * Sin(Heading_Rad) + Wind_Y;
-         New_Alt : Integer := A.Pos.Alt + Integer(Float(A.Vertical_Rate) * Time_Delta);
+   begin
+      for Step in Prediction_Horizon loop
 
+          declare
+         Distance_NM : Float := Sim_Aircraft.Speed * 1.0 / 60.0;  -- 1 minute
+         Heading_Rad : Float := Deg_To_Rad(Sim_Aircraft.Heading);
+         Altitude_Change : Integer := Integer(Float(Sim_Aircraft.Vertical_Rate) * 1.0);
+
+         Wind_Rad : constant Float := Deg_To_Rad(Wind_Direction);
+         Wind_X : constant Float := Wind_Speed * Cos(Wind_Rad) * 1.0 / 60.0;
+         Wind_Y : constant Float := Wind_Speed * Sin(Wind_Rad) * 1.0 / 60.0;
       begin
+         -- Update position manually without flight plan changes
+         Sim_Aircraft.Pos.X := Sim_Aircraft.Pos.X + Distance_NM * Cos(Heading_Rad) + Wind_X;
+         Sim_Aircraft.Pos.Y := Sim_Aircraft.Pos.Y + Distance_NM * Sin(Heading_Rad) + Wind_Y;
+         Sim_Aircraft.Pos.Alt := Sim_Aircraft.Pos.Alt + Altitude_Change;
+      end;
+
          Trajectory(Step) := (
-            Time_Offset   => Minutes_Ahead,
-            Predicted_Pos => (New_X, New_Y, New_Alt),
+            Time_Offset   =>Time_Minutes(Step),
+            Predicted_Pos => Sim_Aircraft.Pos,
             Confidence    => 1.0 - Float(Step) * 0.05  -- Decreases over time
          );
-      end;
    end loop;
 end Predict_Simple_Trajectory;
 
