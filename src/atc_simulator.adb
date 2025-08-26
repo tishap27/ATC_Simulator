@@ -138,7 +138,8 @@ procedure ATC_Simulator is
 
    -- Forward declarations
 function Deg_To_Rad(D : Float) return Float;
-function Distance(P1, P2 : Position) return Float;
+   function Distance(P1, P2 : Position) return Float;
+   function Required_Separation(Cat1, Cat2 : Aircraft_Category) return Float;
    type Future_Conflict_Array is array (1 .. 10) of Future_Conflict;
    subtype Conflict_Count is Integer range 0 .. 10;
 
@@ -160,8 +161,8 @@ function Distance(P1, P2 : Position) return Float;
       ("CYOW ", (100.0, 20.0, 30000), 250.0, 30000)   -- Ottawa
                                          );
     WEST2_Route : constant Flight_Plan := (
-      ("CYVR ", (10.0, 5.0, 31000), 430.0, 31000),    -- Vancouver
-      ("YVRFX", (0.0, 0.0, 28000), 430.0, 28000),     -- fix
+      ("CYVR ", (10.0, 5.0, 30000), 430.0, 30000),    -- Vancouver
+      ("YVRFX", (0.0, 0.0, 28000), 430.0, 30000),     -- fix
       ("YYC01", (-15.0, -5.0, 26000), 430.0, 26000),  -- fix near Calgary
       ("CYYC ", (-30.0, -10.0, 26000), 430.0, 26000), -- Calgary
       ("CYEG ", (-45.0, -15.0, 26000), 250.0, 26000)  -- Edmonton
@@ -178,9 +179,10 @@ function Distance(P1, P2 : Position) return Float;
    -- Initial aircraft states
    Planes : Aircraft_Array := (
       ("AAL123  ", (0.0, 0.0, 30000), 90.0, 450.0     , HEAVY  , CRUISE  , Clock,  "1234" , 0 , EAST1_ROUTE ,1 , True ),
-      ("UAL456  ", (10.0, 5.0, 31000), 270.0, 430.0   , MEDIUM , DESCENT , Clock,  "4321" , -500 , WEST2_ROUTE , 1 , True ),
+      ("UAL456  ", (8.0, 2.0, 30000), 270.0, 430.0   , MEDIUM , DESCENT , Clock,  "4321" , 0 , WEST2_ROUTE , 1 , True ),
       ("DAL789  ", (20.0, -10.0, 30000), 180.0, 400.0 , HEAVY  , CLIMB   , Clock,  "3456" , 1200 , SOUTH3_ROUTE , 1 , True)
    );
+
 
 
 
@@ -226,36 +228,44 @@ begin
       Predict_Simple_Trajectory(Planes(Aircraft_ID(I)), Trajectories(I));
    end loop;
 
-   -- Check conflicts at 5, 10, 15 minutes (simple check)
-   for Time_Check in 1..3 loop
-      declare
-         Check_Step : Prediction_Horizon := Prediction_Horizon(Time_Check * 5);
-      begin
-         for I in 1..3 loop
-            for J in 1..3 loop
-               if I < J then
+
+      for Time_Step in Prediction_Horizon loop
+         -- Check conflicts at 5, 10, 15 minutes (simple check)
+           --if Time_Step = 5 or Time_Step = 10 or Time_Step = 15 then
+   for I in 1..2 loop
+            for J in I+1..3 loop
                   declare
-                     Pos1 : Position := Trajectories(I)(Check_Step).Predicted_Pos;
-                     Pos2 : Position := Trajectories(J)(Check_Step).Predicted_Pos;
+                     Pos1 : Position := Trajectories(I)(Time_Step).Predicted_Pos;
+                     Pos2 : Position := Trajectories(J)(Time_Step).Predicted_Pos;
                      H_Dist : Float := Distance(Pos1, Pos2);
+                     V_Dist : Integer := abs(Pos1.Alt - Pos2.Alt);
+
+                     -- Get required separations
+                  Cat1 : Aircraft_Category := Planes(Aircraft_ID(I)).Category;
+                  Cat2 : Aircraft_Category := Planes(Aircraft_ID(J)).Category;
+                  Required_H_Sep : Float := Required_Separation(Cat1, Cat2);
+                  Required_V_Sep : Integer := (if Pos1.Alt >= 29000 and Pos2.Alt >= 29000
+                                               then RVSM_Sep_Ft else Min_Sep_Ft);
+
+
+
                   begin
-                     if H_Dist < Min_Sep_NM then
+                     if H_Dist < Required_H_Sep and V_Dist < Required_V_Sep then
                         Temp_Count := Temp_Count + 1;
                         exit when Temp_Count > 10;
 
                         Conflicts(Temp_Count) := (
                            Aircraft_1_ID => I,
                            Aircraft_2_ID => J,
-                           Conflict_Time => Time_Minutes(Check_Step),
+                           Conflict_Time => Time_Minutes(Time_Step),
                            Min_Separation => H_Dist,
-                           Severity => (if H_Dist < 3.0 then "CRITICAL" else "HIGH    ")
+                           Severity => (if H_Dist < 3.5 then "CRITICAL" else "HIGH    ")
                         );
                      end if;
                   end;
-               end if;
-            end loop;
+           end loop;
          end loop;
-      end;
+     -- end if;
    end loop;
 
    Count := Temp_Count;
@@ -263,13 +273,14 @@ begin
 
 
    procedure Display_Simple_Future_Conflicts(Conflicts : Future_Conflict_Array; Count : Conflict_Count) is
-begin
-   if Count = 0 then
-      Put_Line("No future conflicts predicted");
-      return;
-   end if;
+   begin
+      if Count = 0 then
+         Put_Line("No Future Conflicts");
+         return;
+      end if;
 
-   Put_Line("FUTURE CONFLICTS:");
+      Put_Line("FUTURE CONFLICTS");
+
    for I in 1 .. Count loop
       Put("  ");
       Put(Float(Conflicts(I).Conflict_Time), Fore => 2, Aft => 0, Exp => 0);
@@ -521,8 +532,7 @@ end Display_Radar_Screen;
       end if;
    end Update_FlightPlan;
 
-
-   --calculate required separation
+--calculate required separation
    function Required_Separation(Cat1 , Cat2 : Aircraft_Category) return Float is
    begin
       case Cat1 is
@@ -537,12 +547,13 @@ end Display_Radar_Screen;
    end Required_Separation;
 
 
+
    -- Conflict prediction check with wake turbulence
    function Predict_Conflict(A1, A2 : Aircraft_State) return Boolean is
       Horizontal_Sep : Float := Distance(A1.Pos , A2.Pos);
       Vertical_Sep   : Integer := abs(A1.Pos.Alt - A2.Pos.Alt);
       Required_H_Sep  : Float := Required_Separation(A1.Category , A2.Category);
-      Required_V_Sep  : Integer := (if A1.Pos.Alt >= 29000 and A2.Pos.Alt >=29000
+      Required_V_Sep  : Integer :=  (if A1.Pos.Alt >= 29000 and A2.Pos.Alt >=29000
                                    then RVSM_Sep_Ft else Min_Sep_Ft);
    begin
       return Horizontal_Sep < Required_H_Sep
