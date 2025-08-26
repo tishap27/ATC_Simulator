@@ -39,7 +39,7 @@ procedure ATC_Simulator is
    --Display contents for radar screen
    RADAR_WIDTH  : constant Integer := 80;
    RADAR_HEIGHT : constant Integer := 30;
-   RADAR_FACTOR : constant Float := 2.0;  -- NM per character
+   RADAR_FACTOR : constant Float := 3.0;  -- NM per character
 
 
    --Aviation Specific types with safety
@@ -117,6 +117,35 @@ procedure ATC_Simulator is
 
    type Radar_Display is array (1 .. RADAR_HEIGHT , 1.. RADAR_WIDTH) of Radar_Cell ;
 
+   type Time_Minutes is new Float range 0.0 .. 1440.0;
+   type Prediction_Horizon is range 1 .. 15; -- Start with 15 minutes
+
+   type Trajectory_Point is record
+   Time_Offset     : Time_Minutes;
+   Predicted_Pos   : Position;
+   Confidence      : Float range 0.0 .. 1.0;
+   end record;
+
+   type Aircraft_Trajectory is array (Prediction_Horizon) of Trajectory_Point;
+
+   type Future_Conflict is record
+   Aircraft_1_ID   : Integer range 1..3;
+   Aircraft_2_ID   : Integer range 1..3;
+   Conflict_Time   : Time_Minutes;
+   Min_Separation  : Float;
+   Severity       : String(1..8); -- "LOW", "HIGH", "CRITICAL"
+   end record;
+
+   -- Forward declarations
+function Deg_To_Rad(D : Float) return Float;
+function Distance(P1, P2 : Position) return Float;
+   type Future_Conflict_Array is array (1 .. 10) of Future_Conflict;
+   subtype Conflict_Count is Integer range 0 .. 10;
+
+
+
+
+
    --Specific Exceptions for aviation safety
    Aircraft_Conflict_Error : exception;
    Altitude_Violation_Error : exception;
@@ -152,6 +181,113 @@ procedure ATC_Simulator is
       ("UAL456  ", (10.0, 5.0, 31000), 270.0, 430.0   , MEDIUM , DESCENT , Clock,  "4321" , -500 , WEST2_ROUTE , 1 , True ),
       ("DAL789  ", (20.0, -10.0, 30000), 180.0, 400.0 , HEAVY  , CLIMB   , Clock,  "3456" , 1200 , SOUTH3_ROUTE , 1 , True)
    );
+
+
+
+procedure Predict_Simple_Trajectory(
+   A : Aircraft_State;
+   Trajectory : out Aircraft_Trajectory) is
+begin
+   for Step in Prediction_Horizon loop
+      declare
+         Minutes_Ahead : Time_Minutes := Time_Minutes(Step);
+         Time_Delta : Float := Float(Minutes_Ahead);
+         Distance_NM : Float := A.Speed * Time_Delta / 60.0;
+         Heading_Rad : Float := Deg_To_Rad(A.Heading);
+
+         -- Simple position prediction (reuse your existing wind logic)
+         Wind_Rad : Float := Deg_To_Rad(Wind_Direction);
+         Wind_X : Float := Wind_Speed * Cos(Wind_Rad) * Time_Delta / 60.0;
+         Wind_Y : Float := Wind_Speed * Sin(Wind_Rad) * Time_Delta / 60.0;
+
+         New_X : Float := A.Pos.X + Distance_NM * Cos(Heading_Rad) + Wind_X;
+         New_Y : Float := A.Pos.Y + Distance_NM * Sin(Heading_Rad) + Wind_Y;
+         New_Alt : Integer := A.Pos.Alt + Integer(Float(A.Vertical_Rate) * Time_Delta);
+
+      begin
+         Trajectory(Step) := (
+            Time_Offset   => Minutes_Ahead,
+            Predicted_Pos => (New_X, New_Y, New_Alt),
+            Confidence    => 1.0 - Float(Step) * 0.05  -- Decreases over time
+         );
+      end;
+   end loop;
+end Predict_Simple_Trajectory;
+
+   procedure Detect_Simple_Future_Conflicts(
+   Conflicts : out Future_Conflict_Array;
+   Count : out Conflict_Count) is
+
+   Trajectories : array (1..3) of Aircraft_Trajectory;
+   Temp_Count : Conflict_Count := 0;
+begin
+   -- Get trajectories
+   for I in 1..3 loop
+      Predict_Simple_Trajectory(Planes(Aircraft_ID(I)), Trajectories(I));
+   end loop;
+
+   -- Check conflicts at 5, 10, 15 minutes (simple check)
+   for Time_Check in 1..3 loop
+      declare
+         Check_Step : Prediction_Horizon := Prediction_Horizon(Time_Check * 5);
+      begin
+         for I in 1..3 loop
+            for J in 1..3 loop
+               if I < J then
+                  declare
+                     Pos1 : Position := Trajectories(I)(Check_Step).Predicted_Pos;
+                     Pos2 : Position := Trajectories(J)(Check_Step).Predicted_Pos;
+                     H_Dist : Float := Distance(Pos1, Pos2);
+                  begin
+                     if H_Dist < Min_Sep_NM then
+                        Temp_Count := Temp_Count + 1;
+                        exit when Temp_Count > 10;
+
+                        Conflicts(Temp_Count) := (
+                           Aircraft_1_ID => I,
+                           Aircraft_2_ID => J,
+                           Conflict_Time => Time_Minutes(Check_Step),
+                           Min_Separation => H_Dist,
+                           Severity => (if H_Dist < 3.0 then "CRITICAL" else "HIGH    ")
+                        );
+                     end if;
+                  end;
+               end if;
+            end loop;
+         end loop;
+      end;
+   end loop;
+
+   Count := Temp_Count;
+   end Detect_Simple_Future_Conflicts;
+
+
+   procedure Display_Simple_Future_Conflicts(Conflicts : Future_Conflict_Array; Count : Conflict_Count) is
+begin
+   if Count = 0 then
+      Put_Line("No future conflicts predicted");
+      return;
+   end if;
+
+   Put_Line("FUTURE CONFLICTS:");
+   for I in 1 .. Count loop
+      Put("  ");
+      Put(Float(Conflicts(I).Conflict_Time), Fore => 2, Aft => 0, Exp => 0);
+      Put(" min: ");
+      Put(Planes(Aircraft_ID(Conflicts(I).Aircraft_1_ID)).Call_Sign(1..6));
+      Put(" vs ");
+      Put(Planes(Aircraft_ID(Conflicts(I).Aircraft_2_ID)).Call_Sign(1..6));
+      Put(" (");
+      Put(Conflicts(I).Min_Separation, Fore => 3, Aft => 1, Exp => 0);
+      Put(" NM) ");
+      Put_Line(Conflicts(I).Severity);
+   end loop;
+   New_Line;
+end Display_Simple_Future_Conflicts;
+
+
+
+
 
    --Clear Screen procedure
    procedure Clear_Screen is
@@ -360,7 +496,7 @@ end Display_Radar_Screen;
 
        -- Apply speed restrictions and log changes
       if Current_WP.Speed_Restriction > 0.0 then
-         if abs A.Speed -Current_WP.Speed_Restriction > 1.0 then
+         if abs (A.Speed -Current_WP.Speed_Restriction )> 1.0 then
             Put_Line("  " & A.Call_Sign & " SPEED CHANGE: Now " &
             Float'Image(Current_WP.Speed_Restriction) & " kt at " & Current_WP.Name);
       end if;
@@ -370,7 +506,7 @@ end Display_Radar_Screen;
        -- Calculate vertical rate for altitude restrictions
       if Current_WP.Altitude_Restriction /= A.Pos.Alt then
 
-         if abs A.Pos.Alt - Current_WP.Altitude_Restriction > 50 then
+         if abs (A.Pos.Alt - Current_WP.Altitude_Restriction) > 50 then
             Put_Line("  " & A.Call_Sign & " ALTITUDE CHANGE: Now climbing/descending to " &
             Integer'Image(Current_WP.Altitude_Restriction) & " ft at " & Current_WP.Name);
          end if;
@@ -410,7 +546,7 @@ end Display_Radar_Screen;
                                    then RVSM_Sep_Ft else Min_Sep_Ft);
    begin
       return Horizontal_Sep < Required_H_Sep
-        and abs Vertical_Sep < Required_V_Sep;
+        and  Vertical_Sep < Required_V_Sep;
    end Predict_Conflict;
 
    -- Validate aircraft state for safety
@@ -592,6 +728,8 @@ begin
          -- Better Conflict detection
          declare
             Conflicts_Detected: Boolean := False;
+             Future_Conflicts : Future_Conflict_Array;
+             Future_Count : Conflict_Count;
 
          begin
             for I in Aircraft_ID loop
@@ -602,6 +740,9 @@ begin
                   end if;
                end loop;
             end loop;
+
+             Detect_Simple_Future_Conflicts(Future_Conflicts, Future_Count);
+            Display_Simple_Future_Conflicts(Future_Conflicts, Future_Count);
 
             if not Conflicts_Detected then
                Put_Line(" All aircraft maintaining safe separation");
@@ -617,5 +758,13 @@ begin
 
       delay 3.0; -- Simulate real-time update
    end loop;
+
+ --  declare
+ --  Future_Conflicts : Future_Conflict_Array;
+--   Future_Count : Conflict_Count;
+--begin
+  -- Detect_Simple_Future_Conflicts(Future_Conflicts, Future_Count);
+ --  Display_Simple_Future_Conflicts(Future_Conflicts, Future_Count);
+--end;
    Put_Line("=== Simulation Complete ===");
 end ATC_Simulator;

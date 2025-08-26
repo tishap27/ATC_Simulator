@@ -1,22 +1,5 @@
-feat: Add visual radar display with real-time aircraft tracking
-Visual Radar Screen Implementation
+feat: Add 4D trajectory prediction and future conflict detection
 
-Implemented 80x30 character ASCII radar screen with proper coordinate system
-Added world-to-screen coordinate conversion (NM to character grid positioning)
-Real-time display updates every radar sweep with aircraft position tracking
-Scale: 2 nautical miles per character for realistic distance representation
-
-
-Directional Indicators:
-
-> = Flying East (heading 315°-44°)
-v = Flying South (heading 45°-134°)
-< = Flying West (heading 135°-224°)
-^ = Flying North (heading 225°-314°)
-
-Range Ring System:
-
-Inner ring (.) = 10 nautical miles from radar center
-Outer ring (.) = 20 nautical miles from radar center
-Center point (*) = Radar control tower location(Center)
-
+- Add 15-minute trajectory prediction for all aircraft
+- Implement predictive conflict detection at 5, 10, 15 minute intervals  
+- Display future conflicts with time, separation distance, and severity
